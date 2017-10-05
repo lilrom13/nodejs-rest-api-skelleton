@@ -1,14 +1,38 @@
-var express = require('express');
-var path = require('path');
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
+var express       = require('express');
+var path          = require('path');
+var favicon       = require('serve-favicon');
+var logger        = require('morgan');
+var cookieParser  = require('cookie-parser');
+var bodyParser    = require('body-parser');
+var passport      = require('passport');
+var mongoose      = require('mongoose');
+var config        = require('./config/config');
+var autoIncrement = require('mongoose-auto-increment');
 
-var index = require('./routes/index');
-var users = require('./routes/users');
+var index          = require('./routes/v1/index');
+var users          = require('./routes/v1/users');
+var auth           = require('./routes/v1/auth');
 
 var app = express();
+
+var options = {
+    promiseLibrary: require('bluebird'),
+    useMongoClient: true
+};
+
+mongoose.Promise = global.Promise;
+mongoose.connect(config.db.url, options).then(
+    () => {
+        console.log('database connected');
+    }
+).catch(
+    (err) => {
+      console.error("cannot establish connection with database : " + err);
+    }
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -22,8 +46,9 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', index);
-app.use('/users', users);
+app.use('/1', index);
+app.use('/1/auth', auth);
+app.use('/1/users', users);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
